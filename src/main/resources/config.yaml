@@ -1,8 +1,23 @@
-title:
-    t1:11111111111111111111
-    t2:2222222222222222222
-    t3:888888888888888
-authors:
-    a1:link
-    a2:bug
-    a3:shy
+# Used in IRUtil.viewIR
+tools:
+    dotExe: /usr/bin/dot
+    pdfExe: /usr/bin/evince
+    dotFile: IR_tmp.dt
+    pdfFile: IR_tmp.pdf
+
+# All the target packages
+target_list:
+    test1: 
+       pkgDir: testTarget/sample1
+       scope_file: 
+       io_files: testTarget/io/io.txt
+       specific_io_files: testTarget/io/io_specific.txt
+       timer_out: tmp.timer
+       rst_out: tmp.log
+       
+# Ouput detail info about the following function
+test_list:
+    f1: null
+    f2: null
+    f3: null
+

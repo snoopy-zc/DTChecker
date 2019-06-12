@@ -1,14 +1,23 @@
 package wala;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Iterator;
+import java.util.Map;
 
 import com.ibm.wala.classLoader.IBytecodeMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSACFG.BasicBlock;
+import com.ibm.wala.util.WalaException;
+import com.ibm.wala.viz.PDFViewUtil;
+
+import util.Config;
+
 import com.ibm.wala.ssa.SSAInstruction;
 
 public class IRUtil {
@@ -59,6 +68,34 @@ public class IRUtil {
 			}
 		}
 		return -1;
+	}
+	
+	  
+	@SuppressWarnings("unchecked")
+	public static void viewIR(IR ir) throws WalaException {
+	    /**
+	     * JX: it seems "viewIR" is not suitable for some functions like "LeaseManager.checkLeases", 
+	     * its Exception: failed to find <Application,Lorg/apache/hadoop/fs/UnresolvedLinkException>
+	     */
+		
+		Map<String, String> tools = (Map<String, String>) Config.getTools();
+		
+	    IClassHierarchy cha = ir.getMethod().getClassHierarchy();
+	    String dotExe = tools.get("dotExe");
+	    String pdfExe = tools.get("pdfExe");
+		String dotFile = tools.get("dotFile");
+		String pdfFile = tools.get("pdfFile");
+	    
+		if ( !Files.exists( Paths.get(dotExe)) ) 
+	    	System.out.println("ZC - ERROR - the software location of 'dot' is wrong");
+		if ( !Files.exists( Paths.get(pdfExe)) )
+	    	System.out.println("ZC - ERROR - the software location of 'pdfviewer' is wrong");
+	   
+	    // Generate IR ControlFlowGraph's SWT viewer
+	    //SSACFG cfg = ir.getControlFlowGraph();
+	    
+		// Generate IR PDF viewer
+	    PDFViewUtil.ghostviewIR(cha, ir, pdfFile, dotFile, dotExe, pdfExe); //that is, psFile, dotFile, dotExe, gvExe, originally
 	}
 
 }
