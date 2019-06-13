@@ -9,6 +9,7 @@ tools:
 target_list:
     test1: 
        pkgDir: testTarget/sample1
+#       pkgDir: testTarget/hb-3483
        scope_file: 
        io_files: testTarget/io/io.txt
        specific_io_files: testTarget/io/io_specific.txt

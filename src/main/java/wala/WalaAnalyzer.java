@@ -12,7 +12,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.core.tests.callGraph.CallGraphTestUtil;
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
@@ -25,8 +27,9 @@ import com.ibm.wala.ipa.callgraph.Entrypoint;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions.ReflectionOptions;
 import com.ibm.wala.ipa.callgraph.impl.AllApplicationEntrypoints;
 import com.ibm.wala.ipa.callgraph.impl.Util;
+import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
-import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.HashSetFactory;
@@ -44,14 +47,15 @@ public class WalaAnalyzer {
 
 	// WALA basis
 	AnalysisScope scope;
-	ClassHierarchy cha;
+	IClassHierarchy cha;
 	HashSet<Entrypoint> entrypoints;
 	CallGraph cg;
+    PointerAnalysis pa;
 	public List<String> packageScopePrefixes = new ArrayList<String>(); // read from 'package-scope.txt' if exists
 
 	// Statistics
-	int nPackageFuncs = 0; // the real functions we focuses //must satisfy
-							// "isApplicationAndNonNativeMethod" first
+	int nPackageFuncs = 0; // the real functions we focuses 
+							//must satisfy "isApplicationAndNonNativeMethod" first
 	int nTotalFuncs = 0;
 	int nApplicationFuncs = 0;
 	int nPremordialFuncs = 0;
@@ -88,7 +92,7 @@ public class WalaAnalyzer {
 		return this.cg;
 	}
 
-	public ClassHierarchy getClassHierarchy() {
+	public IClassHierarchy getClassHierarchy() {
 		return this.cha;
 	}
 
@@ -143,67 +147,60 @@ public class WalaAnalyzer {
 			CallGraphBuilderCancelException, UnsoundGraphException, WalaException {
 		System.out.println("INFO - WalaAnalyzer: walaAnalysis...");
 
-		// Create a Scope #"JXJavaRegressionExclusions.txt"
-		scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(alljars,
-				(new FileProvider()).getFile(CallGraphTestUtil.REGRESSION_EXCLUSIONS)); // default:
-																						// CallGraphTestUtil.REGRESSION_EXCLUSIONS
-		// Create a Class Hierarchy
-		cha = ClassHierarchyFactory.make(scope);
-		// testTypeHierarchy();
+	    // Create a Scope                                                                           #"JXJavaRegressionExclusions.txt"
+	    scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(alljars, (new FileProvider()).getFile(CallGraphTestUtil.REGRESSION_EXCLUSIONS)); //default: CallGraphTestUtil.REGRESSION_EXCLUSIONS
+	    // Create a Class Hierarchy
+	    cha = ClassHierarchy.make(scope);  
+	    //testTypeHierarchy();
+	    
+	    // Create a Entry Points
+	    entrypoints = new HashSet<Entrypoint>();
+	    Iterable<Entrypoint> allappentrypoints = new AllApplicationEntrypoints(scope, cha);  //Usually: entrypoints = com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints(scope, cha);  //get main entrypoints
+	    // Get all entry points
+	    entrypoints = (HashSet<Entrypoint>) allappentrypoints;
+	    // TODO - can narrow entrypoints according to "scope.txt"
+	    System.err.println(entrypoints.size());
 
-		// Create a Entry Points
-		entrypoints = new HashSet<Entrypoint>();
-		Iterable<Entrypoint> allappentrypoints = new AllApplicationEntrypoints(scope, cha); // Usually: entrypoints =
-																							// com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints(scope,
-																							// cha); //get main
-																							// entrypoints
-		// Get all entry points
-		entrypoints = (HashSet<Entrypoint>) allappentrypoints;
-		// TODO - can narrow entrypoints according to "scope.txt"
+	    // Create Analysis Options
+	    AnalysisOptions options = new AnalysisOptions(scope, entrypoints); 
+	    options.setReflectionOptions(ReflectionOptions.ONE_FLOW_TO_CASTS_NO_METHOD_INVOKE);   //ReflectionOptions.FULL will just cause a few more nodes and methods 
+	    //options.setReflectionOptions(ReflectionOptions.FULL);   //ReflectionOptions.FULL will just cause a few more nodes and methods 
 
-		// Create Analysis Options
-		AnalysisOptions options = new AnalysisOptions(scope, entrypoints);
-		options.setReflectionOptions(ReflectionOptions.ONE_FLOW_TO_CASTS_NO_METHOD_INVOKE); // ReflectionOptions.FULL
-																							// will just cause a few
-																							// more nodes and methods
+	    // Create a builder - default: Context-insensitive   
+	    //#makeZeroCFABuilder(options, new AnalysisCache(), cha, scope, null, null); 
+	    //#makeVanillaZeroOneCFABuilder(options, new AnalysisCache(), cha, scope, null, null);   // this will take 20+ mins to finish
+	    //#makeZeroOneCFABuilder(options, new AnalysisCache(), cha, scope, null, null);
+	    //#makeZeroOneContainerCFABuilder(options, new AnalysisCache(), cha, scope, null, null);
+	    CallGraphBuilder builder = Util.makeZeroCFABuilder(options, new AnalysisCache(), cha, scope, null, null); 
+	    // Context-sensitive
+	    /*
+	    com.ibm.wala.ipa.callgraph.impl.Util.addDefaultSelectors(options, cha); 
+	    com.ibm.wala.ipa.callgraph.impl.Util.addDefaultBypassLogic(options, scope, Util.class.getClassLoader(), cha); 
+	    //ContextSelector contextSelector = new DefaultContextSelector(options);    
+	    //SSAContextInterpreter contextInterpreter = new DefaultSSAInterpreter(options, Cache);
+	    SSAPropagationCallGraphBuilder builder = new nCFABuilder(1, cha, options, new AnalysisCache(), null, null); 
+	    AllocationSiteInNodeFactory factory = new AllocationSiteInNodeFactory(options, cha);
+	    builder.setInstanceKeys(factory);
+	    */
+	    
+	    // Build the call graph JX: time-consuming
+	    cg = builder.makeCallGraph(options, null);
+	    System.out.println(CallGraphStats.getStats(cg));
+	    
+        pa = builder.getPointerAnalysis();
+        
+	    // Get pointer analysis results
+	    /*
+	    PointerAnalysis pa = builder.getPointerAnalysis();
+	    HeapModel hm = pa.getHeapModel();   //JX: #getHeapModel's reslult is com.ibm .wala.ipa.callgraph.propagation.PointerAnalysisImpl$HModel@24ccf6a8
+	    BasicHeapGraph hg = new BasicHeapGraph(pa, cg);
+	    System.err.println(hg);
+	    */
+	    //System.err.println(builder.getPointerAnalysis().getHeapGraph());  
 
-		// Create a builder - default: Context-insensitive
-		// #makeZeroCFABuilder(options, new AnalysisCache(), cha, scope, null, null);
-		// #makeVanillaZeroOneCFABuilder(options, new AnalysisCache(), cha, scope, null,
-		// null); // this will take 20+ mins to finish
-		// #makeZeroOneCFABuilder(options, new AnalysisCache(), cha, scope, null, null);
-		// #makeZeroOneContainerCFABuilder(options, new AnalysisCache(), cha, scope,
-		// null, null);
-		CallGraphBuilder builder = Util.makeZeroCFABuilder(options, new AnalysisCache(null, null, null), cha,
-				scope, null, null);
-		// Context-sensitive
-		/*
-		 * com.ibm.wala.ipa.callgraph.impl.Util.addDefaultSelectors(options, cha);
-		 * com.ibm.wala.ipa.callgraph.impl.Util.addDefaultBypassLogic(options, scope,
-		 * Util.class.getClassLoader(), cha); //ContextSelector contextSelector = new
-		 * DefaultContextSelector(options); //SSAContextInterpreter contextInterpreter =
-		 * new DefaultSSAInterpreter(options, Cache); SSAPropagationCallGraphBuilder
-		 * builder = new nCFABuilder(1, cha, options, new AnalysisCache(), null, null);
-		 * AllocationSiteInNodeFactory factory = new
-		 * AllocationSiteInNodeFactory(options, cha); builder.setInstanceKeys(factory);
-		 */
-
-		// Build the call graph JX: time-consuming
-		cg = builder.makeCallGraph(options, null);
-		System.out.println(CallGraphStats.getStats(cg));
-
-		// Get pointer analysis results
-		/*
-		 * PointerAnalysis pa = builder.getPointerAnalysis(); HeapModel hm =
-		 * pa.getHeapModel(); //JX: #getHeapModel's reslult is com.ibm
-		 * .wala.ipa.callgraph.propagation.PointerAnalysisImpl$HModel@24ccf6a8
-		 * BasicHeapGraph hg = new BasicHeapGraph(pa, cg); System.err.println(hg);
-		 */
-		// System.err.println(builder.getPointerAnalysis().getHeapGraph());
-
-		if (CHECK_GRAPH) {
-			GraphIntegrity.check(cg);
-		}
+	    if (CHECK_GRAPH) {
+	      GraphIntegrity.check(cg);
+	    }
 	}
 
 	private void infoWalaAnalysisEnv() {
@@ -252,11 +249,16 @@ public class WalaAnalyzer {
 		System.out.println("INFO - WalaAnalyzer: readPackageScope");
 		
 		String filepath = this.args.get("scope_file");
+		
+		if(filepath==null) {
+			System.out.println("NOTICE - not assign the scope file, so SCOPE is ALL methods!!");
+			return;
+		}
 
 		File f = new File(filepath);
 
 		if (!f.exists()) {
-			System.out.println("NOTICE - not find the 'package-scope.txt' file, so SCOPE is ALL methods!!");
+			System.out.println("NOTICE - not find the '"+ filepath +"' file, so SCOPE is ALL methods!!");
 			return;
 		}
 
@@ -390,5 +392,73 @@ public class WalaAnalyzer {
 		}
 		return result.toString();
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+    public void testTypeHierarchy() throws WalaException {
+	    System.err.println("JX-breakpoint-testTypeHierarchy");
+	    
+	    // Test - class hierarchy
+	    System.err.println("Number of All Classes = " + cha.getNumberOfClasses());
+	    for (IClass c : cha) {  
+	    	if(c.toString().indexOf("Primordial")<0)
+	        System.err.println(c);
+	    }
+	    
+	    // View the whole Type Hierarchy SWT if needed
+//	    Graph<IClass> g = typeHierarchy2Graph(cha);
+//	    g = pruneForAppLoader(g);
+//	    viewTypeHierarchySWT(g);
+//	    
+	    // Print some related Type Hierarchy
+	    /*
+	    Graph<IClass> result = SlowSparseNumberedGraph.make();
+	    for (IClass c : cha) {   //JX: this step should ensure including all needed nodes used below
+	      //if (c.getName().toString().indexOf(functionname_for_test) >= 0) {
+	        //System.err.println(c.getName().toString());
+	        result.addNode(c);
+	      //}
+	    }
+	    for (IClass c : cha) {
+	      if (c.getName().toString().indexOf(functionname_for_test) >= 0) {
+	        for (IClass x : cha.getImmediateSubclasses(c)) {
+	          System.err.println(x.getName().toString());
+	          result.addEdge(c, x);
+	        }
+	        if (c.isInterface()) {  
+	          for (IClass x : cha.getImplementors(c.getReference())) {
+	            result.addEdge(c, x);
+	          }
+	        }
+	      }
+	    }
+	    result = pruneForAppLoader(result);
+	    viewTypeHierarchySWT(result);
+	    */
+    }
 
 }

@@ -18,6 +18,8 @@ repositories {
     jcenter()
 }
 
+applicationDefaultJvmArgs = ["-Xmx16G"]
+
 dependencies {
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     //api 'org.apache.commons:commons-math3:3.6.1'
@@ -27,9 +29,7 @@ dependencies {
 	//compile group: 'fr.inria.gforge.spoon', name: 'spoon-decompiler', version: '0.1.0'
 	
 	// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.core
-	compile group: 'com.ibm.wala', name: 'com.ibm.wala.core', version: '1.4.3'	  
-	// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
-	compile group: 'com.ibm.wala', name: 'com.ibm.wala.util', version: '1.4.3'	
+	//compile group: 'com.ibm.wala', name: 'com.ibm.wala.core', version: '1.4.3'	  
 	// https://mvnrepository.com/artifact/org.yaml/snakeyaml
 	compile group: 'org.yaml', name: 'snakeyaml', version: '1.24'
 	
@@ -38,5 +38,7 @@ dependencies {
 
     // Use JUnit test framework
     //testImplementation 'junit:junit:4.12'
+    
+    compile fileTree(dir:'libs',include:['*.jar'])
 }
 
