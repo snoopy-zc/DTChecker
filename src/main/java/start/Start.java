@@ -23,13 +23,13 @@ public class Start {
 			@SuppressWarnings("unchecked")
 			Map<String,String> arg = (Map<String, String>) targetList.get(targetID);	
 			
-			//Timer timer = new Timer(arg.get("timer_out"));
+			Timer timer = new Timer(Paths.get(arg.get("timer_out")).toAbsolutePath());
 			
-			//timer.tic("WalaAnalyzer begin");
+			timer.tic("WalaAnalyzer begin");
 			
 			WalaAnalyzer walaAnalyzer = new WalaAnalyzer(arg);
 			
-			//timer.toc("WalaAnalyzer end");			
+			timer.toc("WalaAnalyzer end");			
 		}
 	}
 }
