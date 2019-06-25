@@ -1,5 +1,5 @@
 #!/bin/bash
 javac Test.java
-jar cf Test.jar Test.class 
+jar cf Test.jar *.class 
 
 echo "Finish!"

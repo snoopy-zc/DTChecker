@@ -127,9 +127,15 @@ public class Test implements Runnable {
 
 		Set<Integer> z = new HashSet<Integer>();
 		Test a = new Test(z, true);
-		(new Thread(a)).start(); // for implements
-		
-		
+		(new Thread(a)).start(); // for implements		
+		ThreadEx.boom();
 	}
+}
 
+
+class ThreadEx {
+	public static Thread t = new Thread();
+	public static void boom() {
+		System.out.println(t);
+	}
 }
