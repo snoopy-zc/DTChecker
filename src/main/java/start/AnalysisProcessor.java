@@ -44,48 +44,45 @@ public class AnalysisProcessor {
 		
 		
 		
-		
 
-		getCaller4ThreadRun(walaAnalyzer.getCallGraph());
-		
-		
-		
-		
-		
-
+		HashSet<String> strs =  getCaller4ThreadRun(walaAnalyzer.getCallGraph());
+		for(String s : strs) {
+			System.out.println(s);
+		}
+			
 		timer.close();
-		
-		
-		
-		
+			
 		
 	}
 
-	public static HashSet<CGNode> getCaller4ThreadRun(CallGraph cg) {
+	public static HashSet<String> getCaller4ThreadRun(CallGraph cg) {
 		// HashSet<CGNode> whoHasRun = new HashSet<CGNode>();
 		// HashSet<MyPair> caller4run = new HashSet<MyPair>();
+
+		HashSet<String> entryPoints = new HashSet<String>();		
+		
 		for (Iterator<? extends CGNode> it = cg.iterator(); it.hasNext();) {
 			CGNode f = it.next();
-			if(f==null) {System.err.print("f==null\n");continue;}
+			//if(f==null) {System.err.print("f==null\n");continue;}
 			if (WalaAnalyzer.isApplicationMethod(f) 
-					//&& !WalaAnalyzer.isNativeMethod(f)
+					&& !WalaAnalyzer.isNativeMethod(f)
 					) {
 				IR ir = f.getIR();
-				if (ir==null) {System.err.print("ir==null\n");continue;}
+				//if (ir==null) {System.err.print("ir==null\n");continue;}
 				SSACFG cfg = ir.getControlFlowGraph();
-				if (cfg==null) {System.err.print("cfg==null\n");continue;}
+				//if (cfg==null) {System.err.print("cfg==null\n");continue;}
 				for (Iterator<ISSABasicBlock> cfg_it = cfg.iterator(); cfg_it.hasNext();) {
 					ISSABasicBlock bb = cfg_it.next();
 					for (Iterator<SSAInstruction> bb_it = bb.iterator(); bb_it.hasNext();) {
 						SSAInstruction ssaInst = bb_it.next();
 						if (ssaInst instanceof SSAInvokeInstruction) {
 //	      			    			if(((SSAInvokeInstruction)ssaInst).getDeclaredTarget().getDeclaringClass().getName().toString().equals("Ljava/lang/Thread") &&
-							if (((SSAInvokeInstruction) ssaInst).getDeclaredTarget().getDeclaringClass().getName()
-									.toString().indexOf("Thread") >= 0
-									&& ((SSAInvokeInstruction) ssaInst).getDeclaredTarget().getName().toString()
-											.equals("<init>")) {
-								System.out.println(f);
-								System.out.println(ssaInst.toString());
+							if (((SSAInvokeInstruction) ssaInst).getDeclaredTarget().getName().toString().equals("<init>")
+								&& (((SSAInvokeInstruction) ssaInst).getDeclaredTarget().getDeclaringClass().getName().toString().indexOf("____Thread") >= 0
+									||((SSAInvokeInstruction) ssaInst).getDeclaredTarget().getDeclaringClass().getName().toString().indexOf("Executor") >= 0)) {
+								//System.out.println(f);
+								//System.out.println(ssaInst.toString());
+								entryPoints.add(((SSAInvokeInstruction) ssaInst).getDeclaredTarget().toString());
 //	      			    				if(ssaInst.getNumberOfUses() >= 2){
 //	      			    					SSAInstruction ssa =SSAUtil.getSSAByDU(f,ssaInst.getUse(1));
 //	      			    					if(ssa != null && ssa instanceof SSANewInstruction){
@@ -105,7 +102,7 @@ public class AnalysisProcessor {
 
 			}
 		}
-		return null;
+		return entryPoints;
 	}
 	
 }

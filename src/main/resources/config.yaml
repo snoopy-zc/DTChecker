@@ -6,6 +6,14 @@ tools:
     pdfFile: IR_tmp.pdf
 
 # All the target packages
+#target_list:
+#    test1: 
+#       pkgDir: testTarget/sample1
+#       scope_file: 
+#       io_files: testTarget/io/io.txt
+#       specific_io_files: testTarget/io/io_specific.txt
+#       timer_out_path: testTarget/sample1/tmp.timer
+#       rst_out_path: tmp.log
 target_list:
     test1: 
        pkgDir: testTarget/sample1
@@ -14,13 +22,42 @@ target_list:
        specific_io_files: testTarget/io/io_specific.txt
        timer_out_path: testTarget/sample1/tmp.timer
        rst_out_path: tmp.log
-#    hb-3483: 
-#       pkgDir: testTarget/hb-3483
-#       scope_file: 
-#       io_files: testTarget/io/io.txt
-#       specific_io_files: testTarget/io/io_specific.txt
-#       timer_out_path: testTarget/sample1/tmp.timer
-#       rst_out_path: tmp.log
+    hb-3483: 
+       pkgDir: /home/c-lab/eclipse-workspace/test_bugs/3_hb-3483
+       scope_file: 
+       io_files: 
+       specific_io_files: 
+       timer_out_path: testTarget/tmp.timer
+       rst_out_path: tmp.log
+    ca-6744: 
+       pkgDir: /home/c-lab/eclipse-workspace/test_bugs/1_ca-6744
+       scope_file: 
+       io_files: 
+       specific_io_files: 
+       timer_out_path: testTarget/tmp.timer
+       rst_out_path: tmp.log
+    ha-4584: 
+       pkgDir: /home/c-lab/eclipse-workspace/test_bugs/2_ha-4584
+       scope_file: 
+       io_files: 
+       specific_io_files: 
+       timer_out_path: testTarget/tmp.timer
+       rst_out_path: tmp.log
+    hd-5153: 
+       pkgDir: /home/c-lab/eclipse-workspace/test_bugs/4_hd-5153
+       scope_file: 
+       io_files: 
+       specific_io_files: 
+       timer_out_path: testTarget/tmp.timer
+       rst_out_path: tmp.log
+    mr-2705: 
+       pkgDir: /home/c-lab/eclipse-workspace/test_bugs/5_mr-2705
+       scope_file: 
+       io_files: 
+       specific_io_files: 
+       timer_out_path: testTarget/tmp.timer
+       rst_out_path: tmp.log
+    
     
        
 # Ouput detail info about the following function
