@@ -10,3 +10,5 @@ To find out the unreasonable thread-related configuration and layout...
 Update file 
 > src/main/resources/config.yaml
 
+# Todo
+Remove gradle from this project, because there are too many problems to download the gradle binary.
